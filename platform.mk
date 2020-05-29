@@ -41,21 +41,107 @@ AB_OTA_POSTINSTALL_CONFIG += \
     FILESYSTEM_TYPE_system=ext4 \
     POSTINSTALL_OPTIONAL_system=true
 
+# Faster dexpreopt by pushing to system_other
+# (optional)
+#PRODUCT_PACKAGES += \
+#    cppreopts.sh
+#PRODUCT_PROPERTY_OVERRIDES += \
+#    ro.cp_system_other_odex=1
+
+# Userdata Checkpointing OTA GC
+# (optional)
+#PRODUCT_PACKAGES += \
+#    checkpoint_gc
+#AB_OTA_POSTINSTALL_CONFIG += \
+#    RUN_POSTINSTALL_vendor=true \
+#    POSTINSTALL_PATH_vendor=bin/checkpoint_gc \
+#    FILESYSTEM_TYPE_vendor=ext4 \
+#    POSTINSTALL_OPTIONAL_vendor=true
+
 # A/B related packages
 PRODUCT_PACKAGES += \
     update_engine \
-    update_engine_client \
     update_engine_sideload \
     update_verifier \
     bootctrl.sdm845 \
     bootctrl.sdm845.recovery
 
+# F2FS
+PRODUCT_PACKAGES += \
+    sg_write_buffer \
+    f2fs_io \
+    check_f2fs
+
+# The following modules are included in debuggable builds only.
+PRODUCT_PACKAGES_DEBUG += \
+    bootctl \
+    update_engine_client
+
+# All partitions touched by the updater which require slotselect
+# Also contains logical partitions
 AB_OTA_PARTITIONS += \
     boot \
+    vbmeta \
     dtbo \
     system \
     vendor \
-    vbmeta
+    product
+
+# Dynamic partitions
+# ==================
+
+PRODUCT_USE_DYNAMIC_PARTITIONS := true
+# Don't create one super.img, but split it out over system and vendor
+# partitions
+PRODUCT_RETROFIT_DYNAMIC_PARTITIONS := true
+
+BOARD_SUPER_PARTITION_GROUPS := sony_dynamic_partitions
+# The logical partitions contained within the super image
+BOARD_SONY_DYNAMIC_PARTITIONS_PARTITION_LIST := \
+    system \
+    vendor \
+    product
+
+# We don't have a metadata partition, but the dynamic partition metadata
+# storing mechanism is independent of that partition and should reside on
+# /system
+BOARD_SUPER_PARTITION_METADATA_DEVICE := system
+BOARD_SUPER_PARTITION_BLOCK_DEVICES := system vendor
+# Apollo: BOARD_SYSTEMIMAGE_PARTITION_SIZE := 4227858432
+BOARD_SUPER_PARTITION_SYSTEM_DEVICE_SIZE := 4227858432
+# Apollo: BOARD_VENDORIMAGE_PARTITION_SIZE := 1056714752
+BOARD_SUPER_PARTITION_VENDOR_DEVICE_SIZE := 1056714752
+# 4227858432 + 1056714752 = 5284573184
+BOARD_SUPER_PARTITION_SIZE := 5284573184
+# Assume 4MB metadata size (4194304)
+# 5284573184 − 4194304
+BOARD_SONY_DYNAMIC_PARTITIONS_SIZE := 5280378880
+
+# Now that we have enabled the logical product partition, make sure it is
+# actually being used instead of /system/product
+TARGET_COPY_OUT_PRODUCT := product
+
+# Ensure a /product image is built
+PRODUCT_BUILD_PRODUCT_IMAGE := true
+BOARD_PRODUCTIMAGE_FILE_SYSTEM_TYPE := ext4
+
+
+# Check whether we are accidentally installing an update which already assumes
+# dynamic partitioning, but the base system does not understand them yet, so
+# postinstall scripts should be disabled
+# See source.android.com
+#   Dynamic partitions for A/B without DP launch / physical super partition
+#
+# Needs hardware/google repos
+# (optional)
+PRODUCT_PACKAGES += \
+    check_dynamic_partitions \
+
+AB_OTA_POSTINSTALL_CONFIG += \
+    RUN_POSTINSTALL_product=true \
+    POSTINSTALL_PATH_product=bin/check_dynamic_partitions \
+    FILESYSTEM_TYPE_product=ext4 \
+    POSTINSTALL_OPTIONAL_product=false \
 
 # Treble
 # Include vndk/vndk-sp/ll-ndk modules

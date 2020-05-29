@@ -37,6 +37,8 @@ BOARD_RAMDISK_OFFSET     := 0x02000000
 
 BOARD_KERNEL_CMDLINE += lpm_levels.sleep_disabled=1
 BOARD_KERNEL_CMDLINE += androidboot.bootdevice=1d84000.ufshc
+# Following crosshatch 7f12c04fd641b90e405d814fc930f888700f14db
+BOARD_KERNEL_CMDLINE += androidboot.bootdevice=soc/1d84000.ufshc
 BOARD_KERNEL_CMDLINE += swiotlb=2048
 BOARD_KERNEL_CMDLINE += service_locator.enable=1
 BOARD_KERNEL_CMDLINE += msm_drm.dsi_display0=dsi_panel_somc_tama_cmd:config0
@@ -111,7 +113,17 @@ BOARD_VENDORIMAGE_EXTFS_INODE_COUNT := 4096
 BOARD_AVB_ENABLE := true
 TARGET_NO_RECOVERY := true
 BOARD_USES_RECOVERY_AS_BOOT := true
-BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
+# Disabled for dynamic partitions
+#BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
+
+# From crosshatch
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+TARGET_USERIMAGES_USE_EXT4 := true
+
+BOARD_EXT4_SHARE_DUP_BLOCKS := true
+
+BOARD_SYSTEMIMAGE_EXTFS_INODE_COUNT := 4096
+BOARD_SYSTEMIMAGE_JOURNAL_SIZE := 0
 
 # DTBO partition definitions
 TARGET_NEEDS_DTBOIMAGE ?= true
